@@ -1,0 +1,121 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "apply",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        -20
+      ],
+      "id": "52be1ada-347a-4558-be63-515196232112",
+      "name": "Webhook",
+      "webhookId": "38abb023-ee30-44bf-97c1-d2dc8f0a49b0"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=app.py - Rapor Temizleme Fonksiyonu Ekli\nCode \nYaklaşım 2: N8N Sistem Mesajını Düzenleme\nN8N'deki sistem mesajını şu şekilde güncelleyebilirsiniz:\n\nSistem:\nSen bir doktor asistanısın. Kullanıcı kan tahlili sonuçlarını gönderdiğinde sadece aşağıdaki format ile yanıt ver. Ek açıklama yapma, direkt raporu ver:\n\n1. Genel Bilgiler  \n   1.1. Hasta Bilgileri  \n       - Adı Soyadı:  \n       - Yaş/Cinsiyet:  \n       - Hasta No:  \n   1.2. Örnek Bilgisi  \n       - Alınma Tarihi/Saati:  \n       - Numune Türü:\n2. Klinik Bilgiler  \n   2.1. Başvuru Şikayetleri  \n   2.2. Tıbbi Öykü\n3. Laboratuvar Bulguları  \n   3.1. Hematoloji  \n       | Parametre | Sonuç | Birim | Referans Aralığı | Yorum |  \n       |—|—|—|—|—|  \n       | Hemoglobin (Hb) |  | g/dL | 13.5–17.5 (E) / 12–16 (K) |  |  \n       …  \n   3.2. Biyokimya  \n   3.3. Lipid Paneli  \n   3.4. Koagülasyon  \n   3.5. Diğer\n4. Bulguların Yorumu  \n   - Kritik yüksek/düşük değerler  \n   - Genel değerlendirme\n5. Olası Teşhisler  \n   - Teşhis 1: açıklama  \n   - (Yoksa \"Teşhis edilebilecek hastalık bulunamadı.\")\n6. Tedavi Planı  \n   6.1. Tedavi Hedefleri  \n   6.2. Önerilen Tedavi Yöntemleri  \n       - İlaç Tedavisi  \n       - Yaşam Tarzı ve Beslenme  \n       - Diğer Yaklaşımlar  \n   6.3. İzlem ve Kontrol\n7. Sonuç ve Öneriler  \n   - Kısa özet  \n   - Genel öneriler  \n   - Uzun dönem takip planı\n\nÖNEMLI: Yanıtına giriş cümlesi ekleme, direkt \"1. Genel Bilgiler\" ile başla."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        220,
+        0
+      ],
+      "id": "fdd73f48-4a48-4c6f-aa5c-4a36d617c7e0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        220,
+        180
+      ],
+      "id": "27246719-dc98-45b1-b15f-185527d98bce",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "e3Qydy5Jv3AiaOuv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [
+        580,
+        0
+      ],
+      "id": "1c4620b6-32b3-4926-9a5e-53024160edd9",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "698e7f33-277f-4cb7-8ef7-57b4d4b99de9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "10b096f18ea4a142b28d1672d50431f128ce92b05a97d4f40a52be9aa9edb620"
+  },
+  "id": "1NyvndUAlGZHqDqJ",
+  "tags": []
+}

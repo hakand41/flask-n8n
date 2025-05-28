@@ -1,0 +1,719 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6035ddf2-cc41-40a0-a310-01d7f577e4bc",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1380,
+        0
+      ],
+      "id": "2f9492b3-13fc-41b6-a57a-c8ff0c840ca5",
+      "name": "Webhook",
+      "webhookId": "6035ddf2-cc41-40a0-a310-01d7f577e4bc"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=SYSTEM: \nYou are a JSON-only data generator. When asked, you must output a single valid JSON object and nothing else.\n\nUSER:\nGelen HL7-JSON verisini incele:\n{{$node[\"Webhook\"].json.body.hl7Message}}\n\nBu verideki OBX segmentlerindeki her test için:\n- testAd: OBX|…|<testAd> kısmı\n- durum: değer ile referans aralığını karşılaştırarak\n    • < referans min ise \"KRİTİK\"\n    • = referans min veya max ise \"SINIRDA\"\n    • aralık içindeyse \"NORMAL\"\n\nTek bir JSON nesnesi olarak, tam olarak şu formata uygun ve sadece bu JSON’u döndür:\n\n{\n  \"sonuclar\": [\n    {\n      \"testAd\": \"WBC\",\n      \"durum\": \"NORMAL\"\n    },\n    {\n      \"testAd\": \"HGB\",\n      \"durum\": \"SINIRDA\"\n    },\n    …\n  ],\n  \"toplamTestSayisi\": 5\n}\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        -1220,
+        0
+      ],
+      "id": "4c14e546-3340-4422-b663-3cf848543e23",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1220,
+        180
+      ],
+      "id": "bd333d09-46be-4c1d-af85-d2e785eee600",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "e3Qydy5Jv3AiaOuv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Read the raw markdown‑wrapped JSON from the incoming item\nconst raw = $input.first().json.output;\n\n// Remove the ```json and ``` fences and trim\nconst jsonBlock = raw.replace(/```json\\s*|```/g, '').trim();\n\n// Parse into an object\nconst obj = JSON.parse(jsonBlock);\n\n// Return a single n8n item with the full structure\nreturn [\n  {\n    json: obj\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -920,
+        0
+      ],
+      "id": "9dd090d0-b74a-47f6-91da-12828aeeef53",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.sonuclar.durum }}",
+                    "rightValue": "KRİTİK",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aef8a402-3a2f-4f5b-92e0-59b27a183f7a"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "KRİTİK"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "bfffce49-101e-4b28-ae16-5f8266e0314b",
+                    "leftValue": "={{ $json.sonuclar.durum }}",
+                    "rightValue": "SINIRDA",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SINIRDA"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "851d801c-d1b1-44d0-8f69-4d1215cff2e4",
+                    "leftValue": "={{ $json.sonuclar.durum }}",
+                    "rightValue": "NORMAL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NORMAL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -720,
+        160
+      ],
+      "id": "abd308c4-39fa-495d-97d7-89a142b343cc",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "sonuclar",
+        "include": "selectedOtherFields",
+        "fieldsToInclude": "toplamTestSayisi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -920,
+        160
+      ],
+      "id": "c924a2e2-e2f2-4bf7-8520-bed1f219d271",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "fromEmail": "denthalhealth@gmail.com",
+        "toEmail": "={{ $('Webhook').item.json.body.doktorMail }}",
+        "subject": "Tahlil Sonuçları Hakkında Bilgilendirme",
+        "html": "=<!DOCTYPE html>\n\n<html lang=\"tr\">\n\n\n\n<head>\n\n    <meta charset=\"UTF-8\">\n\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\n    <title>Tahlil Sonuç Bildirimi</title>\n\n    <style>\n\n        body {\n\n            font-family: Arial, sans-serif;\n\n            background-color: #f7f9fc;\n\n            margin: 0;\n\n            padding: 0;\n\n        }\n\n\n\n        .container {\n\n            max-width: 600px;\n\n            margin: 20px auto;\n\n            background-color: #ffffff;\n\n            border-radius: 8px;\n\n            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);\n\n            padding: 20px;\n\n            border-top: 4px solid #4CAF50;\n\n        }\n\n\n\n        h2 {\n\n            color: #333333;\n\n            border-bottom: 1px solid #eeeeee;\n\n            padding-bottom: 10px;\n\n        }\n\n\n\n        .content {\n\n            padding: 15px 0;\n\n            line-height: 1.6;\n\n            font-size: 16px;\n\n        }\n\n\n\n        .result {\n\n            background-color: #e8f5e9;\n\n            padding: 10px;\n\n            border-radius: 6px;\n\n            color: #388e3c;\n\n            font-weight: bold;\n\n            margin-top: 10px;\n\n        }\n\n\n\n        .footer {\n\n            font-size: 14px;\n\n            color: #888888;\n\n            text-align: center;\n\n            margin-top: 20px;\n\n            padding-top: 10px;\n\n            border-top: 1px solid #eeeeee;\n\n        }\n\n    </style>\n\n</head>\n\n\n\n<body>\n\n    <div class=\"container\">\n\n        <h2>Tahlil Sonuç Bildirimi</h2>\n\n        <div class=\"content\">\n\n            <p>\n\n                Sayın Dr. <strong>{{ $('Webhook').item.json.body.doktorAd }}</strong>,<br>\n\n                Hastanız <strong>{{ $('Webhook').item.json.body.hastaAd }}</strong> isimli kişinin aşağıdaki tahlil sonuçları sistem tarafından\n\n                <span class=\"result\">{{ $json[\"sonuclar\"][0][\"durum\"] }}</span>\n\n                olarak belirlenmiştir.\n\n            </p>\n\n            \n\n            <p>\n\n                <strong>{{ $json[\"sonuclar\"][0][\"durum\"] }} SONUÇLAR:</strong>\n\n                <br>\n\n                {{ $json[\"sonuclar\"].map(test => test[\"testAd\"]).join(', ') }}\n\n            </p>\n\n        </div>\n\n\n\n        <div class=\"footer\">\n\n            Bu bildirim otomatik olarak oluşturulmuştur. Lütfen yanıtlamayınız.\n\n        </div>\n\n    </div>\n\n</body>\n\n\n\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -100,
+        -120
+      ],
+      "id": "83fe191e-2c11-43d3-91fb-39beb80a0429",
+      "name": "Send Email",
+      "webhookId": "2ed2fb9b-0936-427e-8bea-34329d6253e5",
+      "credentials": {
+        "smtp": {
+          "id": "xSjdgKgyxESkVtRt",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "sonuclar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        320
+      ],
+      "id": "443f8645-fb27-45a1-a555-182ff9345fa4",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "sonuclar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        160
+      ],
+      "id": "3f56545c-63ef-4ef1-afd6-daab78f2c1a7",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "sonuclar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        20
+      ],
+      "id": "f79f21be-89e1-4b7c-bf96-aac046b227e0",
+      "name": "Aggregate2"
+    },
+    {
+      "parameters": {
+        "fromEmail": "denthalhealth@gmail.com",
+        "toEmail": "={{ $('Webhook').item.json.body.doktorMail }}",
+        "subject": "Tahlil Sonuçları Hakkında Bilgilendirme",
+        "html": "=<!DOCTYPE html>\n<html lang=\"tr\">\n\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Tahlil Sonuç Bildirimi</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            background-color: #f7f9fc;\n            margin: 0;\n            padding: 0;\n        }\n\n        .container {\n            max-width: 600px;\n            margin: 20px auto;\n            background-color: #ffffff;\n            border-radius: 8px;\n            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);\n            padding: 20px;\n            border-top: 4px solid #4CAF50;\n        }\n\n        h2 {\n            color: #333333;\n            border-bottom: 1px solid #eeeeee;\n            padding-bottom: 10px;\n        }\n\n        .content {\n            padding: 15px 0;\n            line-height: 1.6;\n            font-size: 16px;\n        }\n\n        .result {\n            background-color: #e8f5e9;\n            padding: 10px;\n            border-radius: 6px;\n            color: #388e3c;\n            font-weight: bold;\n            margin-top: 10px;\n        }\n\n        .footer {\n            font-size: 14px;\n            color: #888888;\n            text-align: center;\n            margin-top: 20px;\n            padding-top: 10px;\n            border-top: 1px solid #eeeeee;\n        }\n    </style>\n</head>\n\n<body>\n    <div class=\"container\">\n        <h2>Tahlil Sonuç Bildirimi</h2>\n        <div class=\"content\">\n            <p>\n                Sayın Dr. <strong>{{ $('Webhook').item.json.body.doktorAd }}</strong>,<br>\n                Hastanız <strong>{{ $('Webhook').item.json.body.hastaAd }}</strong> isimli kişinin aşağıdaki tahlil sonuçları sistem tarafından\n                <span class=\"result\">{{ $json[\"sonuclar\"][0][\"durum\"] }}</span>\n                olarak belirlenmiştir.\n            </p>\n            \n            <p>\n                <strong>{{ $json[\"sonuclar\"][0][\"durum\"] }} SONUÇLAR:</strong>\n                <br>\n                {{ $json[\"sonuclar\"].map(test => test[\"testAd\"]).join(', ') }}\n            </p>\n        </div>\n\n        <div class=\"footer\">\n            Bu bildirim otomatik olarak oluşturulmuştur. Lütfen yanıtlamayınız.\n        </div>\n    </div>\n</body>\n\n</html>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -100,
+        480
+      ],
+      "id": "3983d582-1aa4-4502-b0d5-bf84fc4e1a6c",
+      "name": "Send Email1",
+      "webhookId": "2ed2fb9b-0936-427e-8bea-34329d6253e5",
+      "credentials": {
+        "smtp": {
+          "id": "xSjdgKgyxESkVtRt",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "denthalhealth@gmail.com",
+        "toEmail": "={{ $('Webhook').item.json.body.doktorMail }}",
+        "subject": "Tahlil Sonuçları Hakkında Bilgilendirme",
+        "html": "=<!DOCTYPE html>\n<html lang=\"tr\">\n\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Tahlil Sonuç Bildirimi</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            background-color: #f7f9fc;\n            margin: 0;\n            padding: 0;\n        }\n\n        .container {\n            max-width: 600px;\n            margin: 20px auto;\n            background-color: #ffffff;\n            border-radius: 8px;\n            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);\n            padding: 20px;\n            border-top: 4px solid #4CAF50;\n        }\n\n        h2 {\n            color: #333333;\n            border-bottom: 1px solid #eeeeee;\n            padding-bottom: 10px;\n        }\n\n        .content {\n            padding: 15px 0;\n            line-height: 1.6;\n            font-size: 16px;\n        }\n\n        .result {\n            background-color: #e8f5e9;\n            padding: 10px;\n            border-radius: 6px;\n            color: #388e3c;\n            font-weight: bold;\n            margin-top: 10px;\n        }\n\n        .footer {\n            font-size: 14px;\n            color: #888888;\n            text-align: center;\n            margin-top: 20px;\n            padding-top: 10px;\n            border-top: 1px solid #eeeeee;\n        }\n    </style>\n</head>\n\n<body>\n    <div class=\"container\">\n        <h2>Tahlil Sonuç Bildirimi</h2>\n        <div class=\"content\">\n            <p>\n                Sayın Dr. <strong>{{ $('Webhook').item.json.body.doktorAd }}</strong>,<br>\n                Hastanız <strong>{{ $('Webhook').item.json.body.hastaAd }}</strong> isimli kişinin aşağıdaki tahlil sonuçları sistem tarafından\n                <span class=\"result\">{{ $json[\"sonuclar\"][0][\"durum\"] }}</span>\n                olarak belirlenmiştir.\n            </p>\n            \n            <p>\n                <strong>{{ $json[\"sonuclar\"][0][\"durum\"] }} SONUÇLAR:</strong>\n                <br>\n                {{ $json[\"sonuclar\"].map(test => test[\"testAd\"]).join(', ') }}\n            </p>\n        </div>\n\n        <div class=\"footer\">\n            Bu bildirim otomatik olarak oluşturulmuştur. Lütfen yanıtlamayınız.\n        </div>\n    </div>\n</body>\n\n</html>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -100,
+        200
+      ],
+      "id": "dcb33530-14f4-488a-a6a1-7c77815909c7",
+      "name": "Send Email2",
+      "webhookId": "2ed2fb9b-0936-427e-8bea-34329d6253e5",
+      "credentials": {
+        "smtp": {
+          "id": "xSjdgKgyxESkVtRt",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "denthalhealth@gmail.com",
+        "toEmail": "={{ $('Webhook').item.json.body.doktorMail }}",
+        "subject": "Tahlil Sonuçları Hakkında Bilgilendirme",
+        "html": "=<!DOCTYPE html>\n<html lang=\"tr\">\n\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Tahlil Sonuçlarınız Hazır</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            background-color: #f0f4f8;\n            margin: 0;\n            padding: 0;\n        }\n\n        .container {\n            max-width: 600px;\n            margin: 30px auto;\n            background-color: #ffffff;\n            border-radius: 10px;\n            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);\n            padding: 20px;\n            border-top: 4px solid #1976d2;\n        }\n\n        h2 {\n            color: #1976d2;\n            border-bottom: 1px solid #eeeeee;\n            padding-bottom: 10px;\n        }\n\n        .content {\n            padding: 15px 0;\n            line-height: 1.6;\n            font-size: 16px;\n        }\n\n        .result {\n            background-color: #bbdefb;\n            padding: 10px;\n            border-radius: 6px;\n            color: #0d47a1;\n            font-weight: bold;\n            margin-top: 10px;\n        }\n\n        .footer {\n            font-size: 14px;\n            color: #888888;\n            text-align: center;\n            margin-top: 20px;\n            padding-top: 10px;\n            border-top: 1px solid #eeeeee;\n        }\n    </style>\n</head>\n\n<body>\n    <div class=\"container\">\n        <h2>Tahlil Sonuçlarınız Hazır</h2>\n        <div class=\"content\">\n            <p>\n                Sayın <strong>{{ $('Webhook').item.json.body.hastaAd }}</strong>,<br>\n                Yaptırmış olduğunuz tahlil sonuçlarınız sistem tarafından\n                <span class=\"result\">{{ $json[\"sonuclar\"][0][\"durum\"] }}</span>\n                olarak belirlenmiştir.\n            </p>\n            \n            <p>\n                <strong>{{ $json[\"sonuclar\"][0][\"durum\"] }} OLAN TESTLERİNİZ:</strong>\n                <br>\n                {{ $json[\"sonuclar\"].map(test => test[\"testAd\"]).join(', ') }}\n            </p>\n\n            <p>\n                Sonuçlarınızı detaylı olarak görüntülemek veya sorularınızı doktorunuzla paylaşmak için lütfen bizimle iletişime geçiniz.\n            </p>\n        </div>\n\n        <div class=\"footer\">\n            Bu mesaj otomatik oluşturulmuştur, lütfen yanıtlamayınız.\n        </div>\n    </div>\n</body>\n\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -60,
+        20
+      ],
+      "id": "958f420b-b261-4416-8224-860ba1a8089e",
+      "name": "Send Email3",
+      "webhookId": "2ed2fb9b-0936-427e-8bea-34329d6253e5",
+      "credentials": {
+        "smtp": {
+          "id": "xSjdgKgyxESkVtRt",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "denthalhealth@gmail.com",
+        "toEmail": "={{ $('Webhook').item.json.body.doktorMail }}",
+        "subject": "Tahlil Sonuçları Hakkında Bilgilendirme",
+        "html": "=<!DOCTYPE html>\n<html lang=\"tr\">\n\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Tahlil Sonuçlarınız Hazır</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            background-color: #f0f4f8;\n            margin: 0;\n            padding: 0;\n        }\n\n        .container {\n            max-width: 600px;\n            margin: 30px auto;\n            background-color: #ffffff;\n            border-radius: 10px;\n            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);\n            padding: 20px;\n            border-top: 4px solid #1976d2;\n        }\n\n        h2 {\n            color: #1976d2;\n            border-bottom: 1px solid #eeeeee;\n            padding-bottom: 10px;\n        }\n\n        .content {\n            padding: 15px 0;\n            line-height: 1.6;\n            font-size: 16px;\n        }\n\n        .result {\n            background-color: #bbdefb;\n            padding: 10px;\n            border-radius: 6px;\n            color: #0d47a1;\n            font-weight: bold;\n            margin-top: 10px;\n        }\n\n        .footer {\n            font-size: 14px;\n            color: #888888;\n            text-align: center;\n            margin-top: 20px;\n            padding-top: 10px;\n            border-top: 1px solid #eeeeee;\n        }\n    </style>\n</head>\n\n<body>\n    <div class=\"container\">\n        <h2>Tahlil Sonuçlarınız Hazır</h2>\n        <div class=\"content\">\n            <p>\n                Sayın <strong>{{ $('Webhook').item.json.body.hastaAd }}</strong>,<br>\n                Yaptırmış olduğunuz tahlil sonuçlarınız sistem tarafından\n                <span class=\"result\">{{ $json[\"sonuclar\"][0][\"durum\"] }}</span>\n                olarak belirlenmiştir.\n            </p>\n            \n            <p>\n                <strong>{{ $json[\"sonuclar\"][0][\"durum\"] }} OLAN TESTLERİNİZ:</strong>\n                <br>\n                {{ $json[\"sonuclar\"].map(test => test[\"testAd\"]).join(', ') }}\n            </p>\n\n            <p>\n                Sonuçlarınızı detaylı olarak görüntülemek veya sorularınızı doktorunuzla paylaşmak için lütfen bizimle iletişime geçiniz.\n            </p>\n        </div>\n\n        <div class=\"footer\">\n            Bu mesaj otomatik oluşturulmuştur, lütfen yanıtlamayınız.\n        </div>\n    </div>\n</body>\n\n</html>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -100,
+        340
+      ],
+      "id": "a151094d-b876-43d1-ab3a-edbd63ae1fe0",
+      "name": "Send Email4",
+      "webhookId": "2ed2fb9b-0936-427e-8bea-34329d6253e5",
+      "credentials": {
+        "smtp": {
+          "id": "xSjdgKgyxESkVtRt",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00a31e87-bdb0-42c4-a217-8d7e2348b0d4",
+              "leftValue": "={{ $json.sonuclar }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -340,
+        20
+      ],
+      "id": "c9f55408-a5c2-4339-93ee-af8f941c29cd",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00a31e87-bdb0-42c4-a217-8d7e2348b0d4",
+              "leftValue": "={{ $json.sonuclar }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -340,
+        160
+      ],
+      "id": "03e913a5-ce7a-48bc-9ec8-4e66178d2509",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00a31e87-bdb0-42c4-a217-8d7e2348b0d4",
+              "leftValue": "={{ $json.sonuclar }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -340,
+        320
+      ],
+      "id": "91fc635b-f7e7-4011-b435-8d3dae1362cb",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "sonuclar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        160,
+        200
+      ],
+      "id": "7ef9fe99-fb56-4278-9d2f-2657d06b316c",
+      "name": "Aggregate3"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        200
+      ],
+      "id": "e0c93b46-6600-4124-a21c-0854b1fbfe09",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5678/webhook/apply",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Webhook').item.json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        380,
+        200
+      ],
+      "id": "94b09465-d907-447b-9240-4cc2562a9d7d",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Aggregate2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate2": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aggregate3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send Email2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aggregate3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Send Email1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aggregate3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "de60e4d8-7c88-43ab-8488-9318b17f20ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "10b096f18ea4a142b28d1672d50431f128ce92b05a97d4f40a52be9aa9edb620"
+  },
+  "id": "O5jTajtGiYxnIMub",
+  "tags": []
+}
