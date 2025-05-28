@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Kan Tahlili Raporu - PDF</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 2cm; 
+    }
+    body {
+      font-family: "DejaVu Sans", "Segoe UI", sans-serif; 
+      font-size: 10.5pt; /* PDF için biraz daha küçük temel font */
+      color: #2c3e50;
+      background: white;
+      margin: 0;
+      line-height: 1.55; /* PDF için satır aralığı */
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 1.2rem; 
+    }
+    .header h1 {
+      font-size: 17pt; /* PDF için başlık boyutu */
+      margin-bottom: 3px;
+    }
+    .header .subtitle {
+      font-size: 9.5pt; 
+      color: #7f8c8d;
+    }
+    .meta-container { /* PDF'de meta bilgileri için sarmalayıcı */
+      font-size: 9.5pt; 
+      margin-bottom: 1.5rem;
+      padding: 0.8rem;
+      border: 1px solid #ddd; /* Hafif bir çerçeve */
+      border-radius: 4px;
+    }
+    .meta-container h2 { /* Meta başlığı */
+        font-size: 11pt;
+        margin-top: 0;
+        margin-bottom: 0.7rem;
+        padding-bottom: 0.3rem;
+        border-bottom: 1px solid #eaeaea;
+        color: #34495e;
+    }
+    .meta-container p {
+      margin: 4px 0; 
+      line-height: 1.4;
+    }
+    .meta-container strong {
+        color: #1a2530; /* PDF'de biraz daha koyu */
+    }
+
+    .report-content {
+      font-size: 10pt; 
+      line-height: 1.65; 
+    }
+    .report-content h1, .report-content h2, .report-content h3 {
+      color: #1a2530; 
+      margin-top: 1.4em; 
+      margin-bottom: 0.5em;
+      page-break-after: avoid; 
+    }
+    .report-content h1 {
+      font-size: 13.5pt; 
+      border-bottom: 1.5px solid #2980b9; 
+      padding-bottom: 0.2em;
+    }
+    .report-content h2 {
+      font-size: 11.5pt; 
+      border-bottom: 1px solid #bdc3c7; 
+      padding-bottom: 0.15em;
+    }
+    .report-content h3 {
+      font-size: 10.5pt; 
+      color: #34495e;
+    }
+    .report-content p {
+        margin-bottom: 0.7em;
+        text-align: justify; 
+    }
+    .report-content ul {
+        list-style-type: disc; 
+        padding-left: 18px; /* PDF için biraz daha az girinti */
+        margin-bottom: 0.8em;
+        page-break-inside: avoid;
+    }
+    .report-content li {
+        margin-bottom: 0.3em;
+    }
+    .report-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.2em 0; 
+      font-size: 9pt; /* PDF tabloları için daha küçük font */
+      page-break-inside: avoid; 
+    }
+    .report-content th, .report-content td {
+      padding: 5px 7px; /* PDF için kompakt padding */
+      border: 1px solid #b0b0b0; /* PDF'de biraz daha belirgin çerçeve */
+      text-align: left;
+      word-wrap: break-word; 
+    }
+    .report-content th {
+      background-color: #e8ecf1; /* PDF için biraz daha yumuşak renk */
+      font-weight: bold; 
+    }
+     .report-content tr:nth-child(even) td {
+      background-color: #f7f8fa; 
+    }
+    .footer {
+      position: fixed;
+      bottom: 1cm; /* Sayfa alt boşluğuna göre ayarla, kesilmemesi için -1cm yerine 1cm */
+      left: 2cm; /* Sayfa sol boşluğuna göre */
+      right: 2cm; /* Sayfa sağ boşluğuna göre */
+      text-align: center;
+      font-size: 8pt; 
+      color: #95a5a6;
+    }
+    /* wkhtmltopdf'in sayfa numaralarını basması için (CSS Paged Media) */
+    .page-number::after {
+        content: counter(page);
+    }
+    .total-pages::after {
+        content: counter(pages);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🩺 Kan Tahlili Raporu</h1>
+    <div class="subtitle">Otomatik Klinik Yorumlama</div>
+  </div>
+
+  <div class="meta-container">
+    <h2>Genel Bilgiler</h2>
+    <p><strong>Hasta:</strong> {{ hasta.name }}</p>
+    {% if hasta.mrn %}<p><strong>Hasta No (MRN):</strong> {{ hasta.mrn }}</p>{% endif %}
+    {% if hasta.dob %}<p><strong>Doğum Tarihi:</strong> {{ hasta.dob }}</p>{% endif %}
+    {% if hasta.gender %}<p><strong>Cinsiyet:</strong> {{ hasta.gender }}</p>{% endif %}
+    <p><strong>Doktor:</strong> {{ doktor.name }} ({{ doktor.title }})</p>
+    <p><strong>Rapor Tarihi:</strong> {{ tarih }}</p>
+    {% if basvuru_sikayetleri and basvuru_sikayetleri|length > 0 %}
+      <p><strong>Başvuru Şikayetleri:</strong> {{ basvuru_sikayetleri | join(', ') }}</p>
+    {% endif %}
+    {% if tibbi_oyku and tibbi_oyku|length > 0 %}
+      <p><strong>Tıbbi Öykü:</strong> {{ tibbi_oyku | join(', ') }}</p>
+    {% endif %}
+  </div>
+
+  <div class="report-content">
+    {% if parsed_report %}
+      {% for element in parsed_report %}
+        {% if element.type == 'h1' %}
+          <h1>{{ element.content }}</h1>
+        {% elif element.type == 'h2' %}
+          <h2>{{ element.content }}</h2>
+        {% elif element.type == 'h3' %}
+          <h3>{{ element.content }}</h3>
+        {% elif element.type == 'ul' %}
+          <ul>
+            {% for item in element.items %}
+              <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
+        {% elif element.type == 'table' and element.data.headers and element.data.rows %}
+          <table>
+            <thead>
+              <tr>
+                {% for header in element.data.headers %}
+                  <th>{{ header }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in element.data.rows %}
+                <tr>
+                  {% for cell in row %}
+                    <td>{{ cell }}</td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% elif element.type == 'p' %}
+          <p>{{ element.content }}</p>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <p>Rapor içeriği PDF için bulunamadı.</p>
+    {% endif %}
+  </div>
+
+  <div class="footer">
+    Bu rapor otomatik oluşturulmuştur. Klinik kararlar için doktor onayı gereklidir. 
+    </div>
+</body>
+</html>

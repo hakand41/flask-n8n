@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Kan Tahlil Girişi</title>
+  <style>
+    /* ... (Mevcut stilleriniz burada kalacak) ... */
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+      max-width: 800px; 
+      margin: 2rem auto; 
+      padding: 0 1rem;
+      background-color: #f4f7f6;
+      color: #333;
+    }
+    .container {
+      background-color: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    label { 
+      display: block; 
+      margin-top: 1rem; 
+      font-weight: 500;
+      color: #555;
+    }
+    select, input[type="text"], input[type="email"], input[type="number"] { 
+      width: 100%; 
+      padding: 0.75rem; 
+      margin-top: .25rem; 
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 1rem;
+    }
+    input:focus, select:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(102,126,234,0.2);
+    }
+    .flash { 
+      padding: 1rem; 
+      margin-top: 1rem; 
+      margin-bottom: 1rem;
+      border-radius: 4px; 
+      text-align: center;
+      font-weight: 500;
+    }
+    .flash.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .flash.danger  { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #eee;
+    }
+    .form-section:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .form-section h2 {
+        font-size: 1.2rem;
+        color: #34495e;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 0.5rem;
+        display: inline-block;
+    }
+
+    .test-block { 
+      border: 1px solid #e0e0e0; 
+      padding: 1.5rem; 
+      margin-top: 1.5rem; 
+      border-radius: 6px; 
+      background-color: #fdfdfd;
+      position: relative; 
+    }
+    .test-block h3 {
+        margin-top: 0;
+        color: #2980b9;
+        font-size: 1.1rem;
+    }
+    button[type="submit"] {
+      display: block;
+      width: 100%;
+      padding: 0.9rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: white;
+      background-color: #667eea;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+      margin-top: 2rem;
+    }
+    button[type="submit"]:hover {
+      background-color: #5a6fcf;
+    }
+    .grid-2-col {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    .grid-1-col { 
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem; 
+    }
+    small.field-hint {
+        display: block;
+        font-size: 0.85em;
+        color: #777;
+        margin-top: 0.3rem;
+    }
+
+    .checkbox-group-container {
+        margin-top: 1.5rem; 
+    }
+    .checkbox-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+        gap: 0.8rem 1rem;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #fdfdfd;
+        max-height: 280px; 
+        overflow-y: auto;
+    }
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        background-color: #fff; 
+        padding: 0.6rem; 
+        border-radius: 3px;
+    }
+    .checkbox-item input[type="checkbox"] {
+        width: auto; 
+        margin-right: 0.75rem; 
+        transform: scale(1.1); 
+    }
+    .checkbox-item label {
+        margin-top: 0; 
+        font-weight: normal; 
+        color: #333;
+        cursor: pointer; 
+        line-height: 1.3; 
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Kan Tahlil Formu</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash {{category}}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post">
+      <div class="form-section">
+        <h2>Kişi ve Başvuru Bilgileri</h2>
+        <div class="grid-2-col">
+            <div>
+                <label for="doktorAdSelect">Doktor Adı</label>
+                <select id="doktorAdSelect" name="doktorAd" required>
+                    <option value="">-- Doktor Seçin --</option>
+                    {% for name in doctors %}
+                    <option value="{{ name }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="doktorMailInput">Doktor E-Posta</label>
+                <input type="email" id="doktorMailInput" name="doktorMail" required readonly>
+            </div>
+        </div>
+        <div class="grid-2-col">
+            <div>
+                <label for="hastaAdSelect">Hasta Adı</label>
+                <select id="hastaAdSelect" name="hastaAd" required>
+                    <option value="">-- Hasta Seçin --</option>
+                    {% for name in patients %}
+                    <option value="{{ name }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="hastaMailInput">Hasta E-Posta</label>
+                <input type="email" id="hastaMailInput" name="hastaMail" required readonly>
+            </div>
+        </div>
+        
+        <div class="checkbox-group-container">
+            <label>Başvuru Şikayetleri (İstediklerinizi seçin):</label>
+            <div class="checkbox-group">
+                {% for sikayet in basvuru_sikayetleri %}
+                <div class="checkbox-item">
+                    <input type="checkbox" name="basvuruSikayeti" value="{{ sikayet }}" id="sikayet_{{ loop.index }}">
+                    <label for="sikayet_{{ loop.index }}">{{ sikayet }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <small class="field-hint">En az bir başvuru şikayeti seçmeniz gerekmektedir.</small>
+        </div>
+
+        <div class="checkbox-group-container">
+            <label>Tıbbi Öykü (Varsa seçiniz):</label>
+            <div class="checkbox-group">
+                {% for oyku_item in tibbi_oyku_secenekleri %}
+                <div class="checkbox-item">
+                    <input type="checkbox" name="tibbiOyku" value="{{ oyku_item }}" id="oyku_{{ loop.index }}">
+                    <label for="oyku_{{ loop.index }}">{{ oyku_item }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            <small class="field-hint">Geçmiş veya mevcut tıbbi durumlarınızı seçebilirsiniz.</small>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2>Test Bilgileri</h2>
+        <label for="testCount">Test Sayısı</label>
+        <select id="testCount" name="test_count" required>
+          <option value="">-- Seçin --</option>
+          {% for i in range(1,11) %} <option value="{{i}}">{{i}}</option>
+          {% endfor %}
+        </select>
+        <div id="testFieldsContainer"></div> 
+      </div>
+      
+      <button type="submit">Rapor Oluştur & Gönder</button>
+    </form>
+  </div>
+
+  <datalist id="codeList">
+    <option value="WBC"></option>
+    <option value="RBC"></option>
+    <option value="HGB"></option>
+    <option value="HCT"></option>
+    <option value="PLT"></option>
+    <option value="GLU"></option> 
+    <option value="CRE"></option>
+    <option value="ALT"></option>
+    <option value="AST"></option>
+    <option value="BUN"></option>
+    <option value="NA"></option> <option value="K"></option>  <option value="CL"></option>  <option value="CRP"></option>
+    <option value="TSH"></option>
+    <option value="URE"></option> <option value="CA"></option>  <option value="MG"></option>  <option value="TP"></option>  <option value="ALB"></option> <option value="BILT"></option><option value="BILD"></option><option value="CHOL"></option><option value="TRIG"></option><option value="HDL"></option> <option value="LDL"></option> <option value="FE"></option>  <option value="FERR"></option></datalist>
+
+  <script>
+    const doctorsData = {{ doctors | tojson | safe }};
+    const patientsData = {{ patients | tojson | safe }};
+    
+    // Değişiklik: testDefinitions objesine yeni testler eklendi
+    const testDefinitions = {
+      WBC: { name: "Lökosit (Beyaz Kan Hücresi)", unit: "10^3/uL", range: "4.0-11.0" },
+      RBC: { name: "Eritrosit (Kırmızı Kan Hücresi)",   unit: "10^6/uL", range: "4.2-5.9" }, // Erkek için örnek, kadın için farklı olabilir
+      HGB: { name: "Hemoglobin",              unit: "g/dL",    range: "13.5-17.5" }, // Erkek için örnek
+      HCT: { name: "Hematokrit",              unit: "%",       range: "38-50" },     // Erkek için örnek
+      PLT: { name: "Trombosit (Platelet)",          unit: "10^3/uL", range: "150-450" },
+      GLU: { name: "Glukoz (Açlık)", unit: "mg/dL", range: "70-100" },
+      CRE: { name: "Kreatinin", unit: "mg/dL", range: "0.6-1.2" },
+      // Yeni Eklenen Test Tanımları
+      ALT: { name: "Alanin Aminotransferaz", unit: "U/L", range: "0-40" },
+      AST: { name: "Aspartat Aminotransferaz", unit: "U/L", range: "0-40" },
+      BUN: { name: "Kan Üre Azotu", unit: "mg/dL", range: "7-20" },
+      URE: { name: "Üre", unit: "mg/dL", range: "15-45" },
+      NA:  { name: "Sodyum", unit: "mEq/L", range: "136-145" },
+      K:   { name: "Potasyum", unit: "mEq/L", range: "3.5-5.1" },
+      CL:  { name: "Klorür", unit: "mEq/L", range: "98-107" },
+      CRP: { name: "C-Reaktif Protein (hs-CRP)", unit: "mg/L", range: "0-3.0" }, // Yüksek duyarlılıklı için örnek
+      TSH: { name: "Tiroid Uyarıcı Hormon", unit: "uIU/mL", range: "0.4-4.0" },
+      CA:  { name: "Kalsiyum, Total", unit: "mg/dL", range: "8.6-10.3" },
+      MG:  { name: "Magnezyum", unit: "mg/dL", range: "1.7-2.2" },
+      TP:  { name: "Total Protein", unit: "g/dL", range: "6.0-8.3" },
+      ALB: { name: "Albumin", unit: "g/dL", range: "3.5-5.2" },
+      BILT:{ name: "Bilirubin, Total", unit: "mg/dL", range: "0.1-1.2" },
+      BILD:{ name: "Bilirubin, Direkt", unit: "mg/dL", range: "0.0-0.3" },
+      CHOL:{ name: "Kolesterol, Total", unit: "mg/dL", range: "<200" }, // İstenen değer
+      TRIG:{ name: "Trigliserid", unit: "mg/dL", range: "<150" },      // İstenen değer
+      HDL: { name: "HDL Kolesterol", unit: "mg/dL", range: ">40" },    // İstenen değer (Erkek), >50 (Kadın)
+      LDL: { name: "LDL Kolesterol", unit: "mg/dL", range: "<100" },   // İstenen değer (Duruma göre değişir)
+      FE:  { name: "Demir (Serum)", unit: "ug/dL", range: "60-170" },
+      FERR:{ name: "Ferritin", unit: "ng/mL", range: "15-200" } // Erkek için örnek, kadın için farklı olabilir
+      // İhtiyacınıza göre buraya daha fazla test tanımı ekleyebilirsiniz
+      // Örnek: { kod: "TEST_KODU", name: "Test Adı", unit: "Birim", range: "Referans Aralığı" }
+    };
+
+    document.getElementById('doktorAdSelect').addEventListener('change', function(){
+        // ... (Bu kısım aynı kalacak) ...
+        const selectedDoctorName = this.value;
+        const mailInput = document.getElementById('doktorMailInput');
+        if (doctorsData[selectedDoctorName]) {
+            mailInput.value = doctorsData[selectedDoctorName].email;
+        } else {
+            mailInput.value = '';
+        }
+    });
+
+    document.getElementById('hastaAdSelect').addEventListener('change', function(){
+        // ... (Bu kısım aynı kalacak) ...
+        const selectedPatientName = this.value;
+        const mailInput = document.getElementById('hastaMailInput');
+        if (patientsData[selectedPatientName]) {
+            mailInput.value = patientsData[selectedPatientName].email;
+        } else {
+            mailInput.value = '';
+        }
+    });
+
+    document.getElementById('testCount').addEventListener('change', function(){
+      // ... (Bu kısım aynı kalacak) ...
+      const count = +this.value || 0;
+      const container = document.getElementById('testFieldsContainer');
+      container.innerHTML = ''; 
+      for(let i = 1; i <= count; i++){
+        const div = document.createElement('div');
+        div.className = 'test-block';
+        div.innerHTML = `
+          <h3>Test ${i}</h3>
+          <label>Kod
+            <input list="codeList" class="code-input" name="test_${i}_code" required>
+          </label>
+          <div class="grid-2-col">
+            <div>
+                <label>Adı
+                    <input type="text" class="name-input" name="test_${i}_name" required>
+                </label>
+            </div>
+            <div>
+                <label>Değer (float)
+                    <input type="number" step="any" name="test_${i}_value" required>
+                </label>
+            </div>
+          </div>
+          <div class="grid-2-col">
+            <div>
+                <label>Birim
+                    <input type="text" class="unit-input" name="test_${i}_unit" required>
+                </label>
+            </div>
+            <div>
+                <label>Referans Aralığı
+                    <input type="text" class="range-input" name="test_${i}_range" required placeholder="örn. 4.0-11.0">
+                </label>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+
+        const codeField = div.querySelector('.code-input');
+        codeField.addEventListener('input', (event) => { 
+          const code = event.target.value.toUpperCase();
+          const def  = testDefinitions[code];
+          if(def){
+            div.querySelector('.name-input').value  = def.name;
+            div.querySelector('.unit-input').value  = def.unit;
+            div.querySelector('.range-input').value = def.range;
+          } else { // Eğer kod listede yoksa diğer alanları temizle veya kullanıcıya bırak
+            div.querySelector('.name-input').value  = '';
+            div.querySelector('.unit-input').value  = '';
+            div.querySelector('.range-input').value = '';
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
